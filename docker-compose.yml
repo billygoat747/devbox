@@ -1,0 +1,16 @@
+services:
+  agent-sandbox:
+    build: .
+    container_name: agent-sandbox
+    env_file:
+      - .env
+    environment:
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      EXA_API_KEY: ${EXA_API_KEY}
+    volumes:
+      - ./workspace:/workspace
+      - ./opencode.json:/home/dev/.config/opencode/opencode.json:ro
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    command: ["opencode", "--auto"]

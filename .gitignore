@@ -1,0 +1,33 @@
+# --- secrets (never commit real keys) ---
+.env
+.env.*
+!.env.example
+
+# --- agent workspace (ephemeral sandbox mount, see docker-compose.yml) ---
+workspace/*
+!workspace/.gitkeep
+
+# --- git ---
+.git/
+
+# --- docs (optional, uncomment to keep READMEs out) ---
+# *.md
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- editors ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- common runtimes (in case they appear at repo root) ---
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
