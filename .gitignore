@@ -7,6 +7,10 @@
 workspace/*
 !workspace/.gitkeep
 
+# --- opencode state (sessions/auth/logs, persisted per sandbox folder) ---
+.opencode-state/*
+!.opencode-state/.gitkeep
+
 # --- git ---
 .git/
 

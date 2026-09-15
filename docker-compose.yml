@@ -1,7 +1,6 @@
 services:
   agent-sandbox:
     build: .
-    container_name: agent-sandbox
     env_file:
       - .env
     environment:
@@ -10,6 +9,13 @@ services:
     volumes:
       - ./workspace:/workspace
       - ./opencode.json:/home/dev/.config/opencode/opencode.json:ro
+      # Persist opencode sessions/auth/logs/state per sandbox folder.
+      # Bind mount (not named volume) so copying this folder gives each
+      # sandbox its own isolated state that travels with the folder.
+      # Mounted at .local (not share/opencode) so the daemon doesn't
+      # create root-owned parent dirs that block dev from writing
+      # siblings like ~/.local/state (XDG_STATE_HOME).
+      - ./.opencode-state:/home/dev/.local
     working_dir: /workspace
     stdin_open: true
     tty: true
