@@ -5,16 +5,29 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ca-certificates \
     curl \
     git \
+    libssl-dev \
     nodejs \
     npm \
+    pkg-config \
     python3 \
     python3-pip \
     python3-venv \
     unzip \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Go from the official tarball (pinned via ARG for easy bumps).
+# dpkg arch names (amd64/arm64) match Go's naming.
+ARG GO_VERSION=1.26.0
+RUN ARCH=$(dpkg --print-architecture) \
+    && curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" -o /tmp/go.tgz \
+    && rm -rf /usr/local/go \
+    && tar -C /usr/local -xzf /tmp/go.tgz \
+    && rm /tmp/go.tgz \
+    && /usr/local/go/bin/go version
 
 # Install opencode; installer defaults to ~/.opencode/bin, so copy system-wide
 RUN curl -fsSL https://opencode.ai/install | bash \
@@ -33,6 +46,13 @@ USER dev
 WORKDIR /workspace
 
 ENV HOME=/home/dev \
-    PATH="/usr/local/bin:${PATH}"
+    PATH="/home/dev/.cargo/bin:/usr/local/go/bin:/usr/local/bin:${PATH}"
+
+# Install Rust via rustup as the dev user (stable, minimal profile).
+# build-essential/pkg-config/libssl-dev above provide the C toolchain
+# most crates need for linking.
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable \
+    && ~/.cargo/bin/rustc --version \
+    && ~/.cargo/bin/cargo --version
 
 CMD ["opencode", "--auto"]
