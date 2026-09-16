@@ -68,10 +68,10 @@ Drop into `/workspace` inside the container and let the agent build with you. Th
 2. **Build and start (attached, interactive):**
 
    ```bash
-   docker compose up --build
+   docker compose run --build --rm agent-sandbox
    ```
 
-   This builds the image, mounts `./workspace` → `/workspace`, mounts `opencode.json` read-only, persists state to `./.opencode-state`, and runs `opencode --auto` as the `dev` user.
+   This builds a one-off container, mounts `./workspace` → `/workspace`, mounts `opencode.json` read-only, persists state to `./.opencode-state`, and runs `opencode --auto` as the `dev` user with an interactive terminal. The one-off container is removed when OpenCode exits.
 
    You should land directly in an opencode session inside the container. `Ctrl+C` stops the agent; the container stops with it.
 
@@ -95,8 +95,8 @@ Drop into `/workspace` inside the container and let the agent build with you. Th
 
 | Task | Command |
 |------|---------|
-| Start agent (foreground) | `docker compose up` |
-| Rebuild after Dockerfile change | `docker compose up --build` |
+| Start agent (foreground) | `docker compose run --rm agent-sandbox` |
+| Rebuild after Dockerfile change | `docker compose run --build --rm agent-sandbox` |
 | Shell as `dev` user | `docker compose exec agent-sandbox bash` |
 | Shell as root (install sys pkgs) | `docker compose exec -u root agent-sandbox bash` |
 | View logs | `docker compose logs -f agent-sandbox` |
