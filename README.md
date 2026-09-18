@@ -1,18 +1,22 @@
 # Devbox — Opencode Agent Sandbox
 
-A reproducible, Docker-based development container for running [opencode](https://opencode.ai) with a batteries-included toolchain for Go, Rust, Node.js, and Python — plus web search via Exa MCP and models via OpenRouter.
+A reproducible, Docker-based development container for running [opencode](https://opencode.ai) with a lean toolchain for Python, Node.js, and Java (via SDKMAN!) — plus web search via Exa MCP and models via OpenRouter.
 
 Drop into `/workspace` inside the container and let the agent build with you. The host `./workspace` folder is your shared scratch space, and agent sessions/state persist per-folder in `.opencode-state`.
 
 ## What's inside
 
-**Base:** Ubuntu 24.04 + `build-essential`, `curl`, `git`, `ca-certificates`, `libssl-dev`, `pkg-config`, `unzip`
+**Base:** Ubuntu 24.04 + `build-essential`, `curl`, `git`, `ca-certificates`, `zip`, `unzip`
 
 **Toolchains (installed in image):**
-- Go `1.26.0` (from official tarball, `/usr/local/go`) — bump with `--build-arg GO_VERSION=...`
-- Rust stable via `rustup` (minimal profile) as the `dev` user — `cargo`, `rustc`
-- Node.js + npm (Ubuntu repo)
 - Python 3 + pip + venv
+- Node.js + npm (Ubuntu repo)
+- SDKMAN! as the `dev` user with **no pre-installed JDKs** — install on demand so the image stays small:
+  ```bash
+  sdk list java
+  sdk install java 21-tem && sdk default java 21-tem
+  ```
+- Java build tools are intentionally omitted — projects should use Maven/Gradle wrappers (`./mvnw`, `./gradlew`)
 
 **Agent:**
 - `opencode` installed system-wide to `/usr/local/bin/opencode`
@@ -33,8 +37,7 @@ Drop into `/workspace` inside the container and let the agent build with you. Th
 ├── .dockerignore
 ├── .gitignore
 ├── workspace/           # mounted to /workspace — ephemeral agent scratch space
-│   ├── main.go + index.html + go.mod   # example: Signal BBS (Go)
-│   └── rust-bbs/                       # example: Signal BBS (Rust port)
+│   └── ...              # your project files live here
 └── .opencode-state/     # persisted opencode sessions/auth/logs (bind mount to ~/.local)
 ```
 
@@ -100,19 +103,21 @@ Drop into `/workspace` inside the container and let the agent build with you. Th
 | Shell as `dev` user | `docker compose exec agent-sandbox bash` |
 | Shell as root (install sys pkgs) | `docker compose exec -u root agent-sandbox bash` |
 | View logs | `docker compose logs -f agent-sandbox` |
-| Run one-off command | `docker compose run --rm agent-sandbox go version` |
-| Pin / bump Go version | `docker compose build --build-arg GO_VERSION=1.25.1` |
+| Run one-off command | `docker compose run --rm agent-sandbox python3 --version` |
+| Install a JDK (in container) | `sdk install java 21-tem && sdk default java 21-tem` |
 
 ### Working with the workspace
 
 - Edit files on the host in `./workspace/` — they appear live at `/workspace` in the container.
-- Example app (Go Signal BBS):
+- Example: install a JDK for the project you're working on:
 
   ```bash
   # inside the container
-  cd /workspace
-  go run .
-  # then open http://localhost:3000 — see below about ports
+  sdk list java
+  sdk install java 21-tem
+  sdk default java 21-tem
+  java -version
+  # build with ./mvnw / ./gradlew wrappers — no system Maven/Gradle needed
   ```
 
 ### Exposing ports (web apps)
@@ -152,7 +157,7 @@ docker compose up
 - **`OPENROUTER_API_KEY` / `EXA_API_KEY` empty:** make sure `.env` exists next to `docker-compose.yml` and has no quotes/spaces around values. Compose also passes them via `env_file` + `environment`.
 - **Permission errors in `~/.local`:** the compose file intentionally mounts at `.local` (not `share/opencode`) so the daemon doesn't create root-owned parent dirs. If you changed the mount, `chown -R $(id -u):$(id -g) .opencode-state` on the host, or `docker compose exec -u root agent-sandbox chown -R dev:dev /home/dev/.local`.
 - **`opencode.json` changes not applying:** it's mounted `:ro` — restart the service; don't edit the in-container copy.
-- **Slow first build:** Go + Rust toolchains download on first build. Subsequent builds are cached unless the `Dockerfile` changes.
+- **Slow first build:** apt packages and `opencode` download on first build. Subsequent builds are cached unless the `Dockerfile` changes. (JDKs download on demand via SDKMAN!, per container.)
 
 ## Security notes
 
